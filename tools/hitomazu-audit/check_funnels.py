@@ -134,8 +134,16 @@ def check_note(target):
     label = target["anchor_label"].replace(" ", "")
     anchor_matches = [a for a in parser.anchors if label in re.sub(r"\s+", "", a["text"])]
     if not anchor_matches:
-        record["evidence"] = "対象の案内文をHTMLのリンク要素で確認できません（JS描画の可能性あり）"
-    else:
+        # note can render labels in separate nodes while displaying the plain
+        # target URL itself as anchor text. In that case, the href still tells
+        # us whether clicking the printed target URL goes to the wrong store.
+        url_label_matches = [a for a in parser.anchors if target["expected"] in a["text"]]
+        if url_label_matches:
+            anchor_matches = url_label_matches
+            record["evidence"] = "記事URLの表示文字列がリンクされている箇所を検査"
+        else:
+            record["evidence"] = "対象の案内文と記事URLをHTMLのリンク要素で確認できません（JS描画の可能性あり）"
+    if anchor_matches:
         links = [urljoin(target["url"], a["href"]) for a in anchor_matches if a["href"]]
         expected = normalized(target["expected"])
         if any(normalized(x) == expected for x in links):
