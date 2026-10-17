@@ -31,12 +31,14 @@ jobs:
       - name: Validate sources
         run: |
           node --check docs/hitomazu-control/app.js
-          python -m py_compile tools/hitomazu-audit/check_sites.py
+          python -m py_compile tools/hitomazu-audit/check_sites.py tools/hitomazu-audit/check_funnels.py
+          python -m unittest discover -s tools/hitomazu-audit -p 'test_*.py'
       - name: Build static dashboard and run read-only site audit
         run: |
           mkdir -p _site
           cp docs/hitomazu-control/index.html docs/hitomazu-control/style.css docs/hitomazu-control/app.js _site/
           python tools/hitomazu-audit/check_sites.py --output _site/site-status.json
+          python tools/hitomazu-audit/check_funnels.py --output _site/funnel-status.json
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v4
         with:
@@ -45,7 +47,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: hitomazu-site-audit
-          path: _site/site-status.json
+          path: |
+            _site/site-status.json
+            _site/funnel-status.json
           retention-days: 14
 
   deploy:
