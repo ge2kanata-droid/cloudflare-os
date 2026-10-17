@@ -1,0 +1,64 @@
+name: Hitomazu Free Site Audit and Dashboard
+
+# GitHub Pages must be enabled with "GitHub Actions" as the source.
+# GitHub disables scheduled workflows in newly forked repositories by default.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 1 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "docs/hitomazu-control/**"
+      - "tools/hitomazu-audit/**"
+      - ".github/workflows/hitomazu-dashboard.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hitomazu-dashboard-pages
+  cancel-in-progress: false
+
+jobs:
+  audit-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate sources
+        run: |
+          node --check docs/hitomazu-control/app.js
+          python -m py_compile tools/hitomazu-audit/check_sites.py
+      - name: Build static dashboard and run read-only site audit
+        run: |
+          mkdir -p _site
+          cp docs/hitomazu-control/index.html docs/hitomazu-control/style.css docs/hitomazu-control/app.js _site/
+          python tools/hitomazu-audit/check_sites.py --output _site/site-status.json
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - name: Save audit JSON for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: hitomazu-site-audit
+          path: _site/site-status.json
+          retention-days: 14
+
+  deploy:
+    needs: audit-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
