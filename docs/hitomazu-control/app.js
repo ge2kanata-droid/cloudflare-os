@@ -141,6 +141,18 @@ async function loadFunnelStatus(){
   counts.append(el("span","tag review","要確認 "+(report.summary.needs_review??"?")+"件"));
   counts.append(el("span","tag","判定不能 "+(report.summary.unknown??"?")+"件"));
   summary.append(date,counts);
+  const store=Array.isArray(report.sites)?report.sites.find(s=>s.url==="https://hitomazu-tools-home.pages.dev/"):null;
+  if(store && store.link_inventory){
+   const inventory=store.link_inventory;
+   const outer=el("div","audit-row");
+   outer.append(el("strong","","公式HPトップの販売リンク構成（HTML内）"));
+   outer.append(el("div","muted","note個別記事 "+(inventory.note_article??"?")+" / noteプロフィール "+(inventory.note_profile??"?")+
+    " / SUZURI個別商品 "+(inventory.suzuri_product??"?")+" / 店舗トップ "+(inventory.suzuri_storefront??"?")+
+    " / 商品一覧 "+(inventory.suzuri_category??"?")));
+   outer.append(el("div","muted","001有料noteへの直接リンク："+(store.direct_paid_note_001??"未確認")+"件。ページ内遷移・売上実績とは異なります。"));
+   if(store.link_advisory)outer.append(el("div","status-unknown",clean(store.link_advisory,350)));
+   summary.append(outer);
+  }
   for(const c of report.note_checks.slice(0,8)){
    const row=el("div","audit-row");
    const status=c.status==="ok"?"正常確認":c.status==="needs_review"?"リンク要確認":"判定不能";
