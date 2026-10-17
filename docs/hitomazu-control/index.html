@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>ひとまず道具店 | AI業務本部</title>
+<link rel="stylesheet" href="./style.css">
+<script src="./app.js" defer></script>
+</head>
+<body>
+<header class="top">
+ <div class="brand"><span class="mark">道</span><div><h1>ひとまず道具店 <small>AI業務本部</small></h1><p>追加課金なし・既存案件優先・作業記録は端末内保存</p></div></div>
+ <div class="top-actions"><button id="exportBtn" class="secondary">JSON書き出し</button><label class="button secondary file-label">JSON読み込み<input type="file" id="importInput" accept=".json,application/json" hidden></label></div>
+</header>
+<main>
+ <section class="notice"><strong>この画面は業務管理の試作版です。</strong> AIの自動実行、Notion同期、ChatGPT認証、24時間稼働はまだ未実装。データはこのブラウザの端末内にのみ保存され、別端末とは同期しません。実際の売上や作業の実行を示すものではありません。</section>
+ <section class="stats" aria-label="集計">
+ <div class="stat"><span>全タスク</span><strong id="total">0</strong></div>
+ <div class="stat"><span>進行中</span><strong id="running">0</strong></div>
+ <div class="stat"><span>確認待ち</span><strong id="review">0</strong></div>
+ <div class="stat"><span>完了</span><strong id="done">0</strong></div>
+ </section>
+ <section class="layout">
+  <div class="left">
+   <article class="panel">
+    <div class="section-title"><h2>タスク管理</h2><button id="newBtn">＋ タスク追加</button></div>
+    <div class="filters"><label>状態 <select id="statusFilter"><option value="">すべて</option><option value="todo">未着手</option><option value="doing">進行中</option><option value="review">確認待ち</option><option value="done">完了</option><option value="paused">保留</option></select></label><label>担当 <select id="ownerFilter"><option value="">すべて</option></select></label></div>
+    <div id="tasks" class="tasks" aria-live="polite"></div>
+    <p id="emptyTasks" class="muted" hidden>該当するタスクはありません。</p>
+   </article>
+  </div>
+  <div class="right">
+   <article class="panel"><h2>売上記録</h2><p class="muted">確認できた実績のみ入力。未取得は空欄で管理します。</p>
+    <div class="metrics"><label>売上（円）<input type="number" min="0" step="1" id="sales" placeholder="未確認"></label><label>注文件数<input type="number" min="0" step="1" id="orders" placeholder="未確認"></label></div>
+    <label>集計対象・確認日<input id="metricNote" maxlength="180" placeholder="例：note管理画面 / 10月17日"></label>
+    <button id="saveMetrics" class="secondary full">実績を保存</button><p class="muted" id="metricsSaved"></p>
+   </article>
+   <article class="panel"><h2>公開サイト点検</h2><p class="muted">GitHub Actionsの無料枠で取得する公開URLの応答結果。未設定時は「未取得」と表示します。</p><div id="siteChecks" class="sitechecks">未取得</div><button class="secondary full" id="refreshChecks">点検結果を読み込む</button></article>
+   <article class="panel"><h2>運用ルール</h2><ul class="rules"><li>追加課金・API従量課金は禁止。</li><li>Manus・Claude等の担当を無断変更しない。</li><li>既存商品・記事を上書きしない。</li><li>外部公開・契約・購入は承認制。</li><li>数字は「未確認」と「0」を区別。</li></ul><p class="muted">中の人の個人活動・世界線記録局は対象外。</p></article>
+  </div>
+ </section>
+</main>
+<dialog id="taskDialog"><form id="taskForm" method="dialog"><h2 id="dialogTitle">タスク追加</h2><input type="hidden" id="taskId">
+<label>タスク名（必須）<input id="taskTitle" maxlength="120" required></label>
+<label>説明・成果条件<textarea id="taskDescription" rows="4" maxlength="1500"></textarea></label>
+<div class="two"><label>担当AI<input id="taskOwner" maxlength="80" placeholder="例：Web担当AI"></label><label>優先度<select id="taskPriority"><option value="high">高</option><option value="normal">通常</option><option value="low">低</option></select></label></div>
+<div class="two"><label>状態<select id="taskStatus"><option value="todo">未着手</option><option value="doing">進行中</option><option value="review">確認待ち</option><option value="done">完了</option><option value="paused">保留</option></select></label><label>期日<input id="taskDue" type="date"></label></div>
+<label>関連URL（任意）<input id="taskUrl" type="url" placeholder="https://..."></label>
+<div class="dialog-actions"><button value="cancel" id="cancelTask" class="secondary" type="button">キャンセル</button><button id="saveTask" type="submit">保存する</button></div></form></dialog>
+<div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+<footer>ひとまず道具店 AI業務本部 — 静的版 / アカウント認証・AI推論なし</footer>
+</body></html>
