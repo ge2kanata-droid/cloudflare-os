@@ -46,6 +46,26 @@ class FunnelAuditTests(unittest.TestCase):
             result = funnel.check_note(funnel.TARGETS[1])
         self.assertEqual(result["status"], "unknown")
 
+
+    def test_displayed_note_url_wrong_href(self):
+        # Seen in the public note rendering: URL text is visible, but the
+        # clickable destination is the SUZURI store.
+        for target in funnel.TARGETS:
+            html = ("<a href='https://suzuri.jp/hitomazu-tools/digital_products/151578'>"
+                    + target["expected"] + "</a>")
+            with self.subTest(target=target["id"]):
+                with patch.object(funnel, "fetch_html", return_value=fake_html(html)):
+                    result = funnel.check_note(target)
+                self.assertEqual(result["status"], "needs_review")
+                self.assertIn("suzuri.jp", result["target_href"])
+
+    def test_displayed_note_url_correct_href(self):
+        target = funnel.TARGETS[0]
+        html = "<a href='" + target["expected"] + "'>" + target["expected"] + "</a>"
+        with patch.object(funnel, "fetch_html", return_value=fake_html(html)):
+            result = funnel.check_note(target)
+        self.assertEqual(result["status"], "ok")
+
     def test_stale_phrase_ignores_script_text(self):
         page = fake_html("<script>販売する準備をしています</script><a href='"
                          + funnel.FREE + "'>無料版（note・0円）</a>")
