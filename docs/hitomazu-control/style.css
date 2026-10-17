@@ -9,3 +9,13 @@ input[hidden], .file-label input[type="file"][hidden] {display:none !important}
   .top-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}
   .top-actions > button, .top-actions > .file-label {width:100%}
 }
+
+/* Autonomous, read-only funnel checks: explicit evidence and manual handoff */
+.audit-counts{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+.audit-row{border-bottom:1px solid #354258;padding:10px 0;font-size:13px;overflow-wrap:anywhere}
+.audit-row strong{display:block;font-size:13px;margin-bottom:3px}
+.audit-finding{padding:12px 0;border-bottom:1px dashed #52617d;overflow-wrap:anywhere}
+.audit-finding strong{font-size:14px;color:#ffe1a7}
+.audit-finding p{margin:5px 0}
+.funnel-findings h3{font-size:14px;margin:17px 0 5px}
+.funnel-findings .task-actions button{white-space:normal;text-align:center;min-height:36px}
