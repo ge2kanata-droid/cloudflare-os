@@ -12,6 +12,7 @@ import json
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urljoin, urlsplit
 
 SITES = [
     ("ひとまず道具店 公式HP", "https://hitomazu-tools-home.pages.dev/"),
@@ -44,6 +45,18 @@ class LinkParser(HTMLParser):
             self._in_title = False
 
 
+def sales_host(href, base_url):
+    """Count actual HTTP(S) destinations, not domain names appearing in query or path."""
+    try:
+        target = urlsplit(urljoin(base_url, href))
+        if target.scheme not in ("https", "http"):
+            return None
+        host = (target.hostname or "").lower().removeprefix("www.")
+        return host if host in LINK_HOSTS else None
+    except ValueError:
+        return None
+
+
 def check(name, url):
     result = {
         "name": name, "url": url, "result": "unknown",
@@ -65,7 +78,7 @@ def check(name, url):
                 parser.feed(raw.decode("utf-8", errors="replace"))
                 result["title"] = parser.title.strip()[:160]
                 for host in LINK_HOSTS:
-                    result["sales_links"][host] = sum(host in link.lower() for link in parser.links)
+                    result["sales_links"][host] = sum(sales_host(link, url) == host for link in parser.links)
                 if sum(result["sales_links"].values()) == 0:
                     result["findings"].append("トップページの直接リンクにはnote/SUZURIが見つかりません（JS生成や別ページのリンクは判定不可）")
     except HTTPError as ex:
