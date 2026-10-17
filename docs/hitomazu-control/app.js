@@ -41,7 +41,7 @@ function render(){
  $("done").textContent=state.tasks.filter(t=>t.status==="done").length;
  const owner=$("ownerFilter"), prev=owner.value;
  owner.replaceChildren(new Option("すべて",""));
- [...new Set(state.tasks.map(t=>t.owner))].sort().forEach(v=>owner.add(new Option(v,v)));
+ [...new Set(state.tasks.map(t=>t.owner))].toSorted().forEach(v=>owner.add(new Option(v,v)));
  if([...owner.options].some(x=>x.value===prev))owner.value=prev;
  const filtered=state.tasks.filter(t=>(!$("statusFilter").value||t.status===$("statusFilter").value)&&(!owner.value||t.owner===owner.value));
  const host=$("tasks");host.replaceChildren();$("emptyTasks").hidden=filtered.length!==0;
