@@ -164,22 +164,77 @@ def check_note(target):
     return record
 
 
+def classify_sales_link(url):
+    """Classify only public, directly linked sales destinations, not conversions."""
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or "").lower().removeprefix("www.")
+        path = parsed.path.rstrip("/")
+        if parsed.scheme not in ("http", "https"):
+            return None
+        if host == "note.com":
+            if re.fullmatch(r"/[^/]+/n/n[a-z0-9]+", path, re.I):
+                return "note_article"
+            if path in ("/open_squid6912", ""):
+                return "note_profile"
+            return "other_store_link"
+        if host == "suzuri.jp":
+            if re.fullmatch(r"/hitomazu-tools/digital_products/[0-9]+", path):
+                return "suzuri_product"
+            if path == "/hitomazu-tools":
+                return "suzuri_storefront"
+            if path == "/hitomazu-tools/digital_products":
+                return "suzuri_category"
+            # Physical merchandise URLs also have product IDs and item names.
+            if re.fullmatch(r"/hitomazu-tools/[0-9]+/[^/]+(?:/[^/]+){0,3}", path):
+                return "suzuri_product"
+            return "other_store_link"
+    except ValueError:
+        return None
+    return None
+
+
 def check_home():
+    keys = ("note_article", "note_profile", "suzuri_product",
+            "suzuri_storefront", "suzuri_category", "other_store_link")
     result = {"url": HOME, "status": "unknown", "http_status": None,
-              "note_links": None, "suzuri_links": None, "evidence": ""}
+              "note_links": None, "suzuri_links": None, "evidence": "",
+              "link_inventory": None, "link_examples": None,
+              "link_advisory": None, "direct_paid_note_001": None}
     response = fetch_html(HOME)
     result["http_status"] = response["http_status"]
     if response["status"] != "fetched":
         result["evidence"] = response["error"] or "確認不可"
         return result
-    links = [urljoin(HOME, a["href"]) for a in response["parser"].anchors if a["href"]]
-    result["note_links"] = sum(urlsplit(link).hostname in ("note.com", "www.note.com") for link in links)
-    result["suzuri_links"] = sum(urlsplit(link).hostname in ("suzuri.jp", "www.suzuri.jp") for link in links)
+    links = [(urljoin(HOME, a["href"]), a["text"][:100])
+             for a in response["parser"].anchors if a["href"]]
+    result["note_links"] = sum(urlsplit(link).hostname in ("note.com", "www.note.com")
+                               for link, _ in links)
+    result["suzuri_links"] = sum(urlsplit(link).hostname in ("suzuri.jp", "www.suzuri.jp")
+                                 for link, _ in links)
+    counts = {key: 0 for key in keys}
+    examples = {key: [] for key in keys}
+    for href, text in links:
+        kind = classify_sales_link(href)
+        if kind is None:
+            continue
+        counts[kind] += 1
+        if len(examples[kind]) < 3:
+            examples[kind].append({"url": href[:350], "text": text})
+    result["link_inventory"] = counts
+    result["link_examples"] = examples
+    result["direct_paid_note_001"] = sum(normalized(url) == normalized(PAID)
+                                        for url, _ in links)
+    specific = counts["note_article"] + counts["suzuri_product"]
+    storefront = counts["note_profile"] + counts["suzuri_storefront"] + counts["suzuri_category"]
+    if specific == 0 and storefront > 0:
+        result["link_advisory"] = ("公式HPトップのHTMLでは販売先のトップ／一覧リンクが見つかりましたが、"
+                                   "個別商品への直接リンクを確認できません。"
+                                   "JS描画や別ページは対象外です。既存HT-043担当の参考情報です。")
     result["status"] = "ok" if (result["note_links"] + result["suzuri_links"]) > 0 else "needs_review"
-    result["evidence"] = ("トップページのHTMLの直接リンクのみを数えています。"
-                          "JS描画・別ページ・購入成否は検査対象外。")
+    result["evidence"] = ("トップページのHTMLの直接リンクだけを分類。"
+                          "リンクの存在は販売成立、リンク先到達、購入可能を意味しません。")
     return result
-
 
 def collect_report():
     note_checks = [check_note(t) for t in TARGETS]
@@ -203,6 +258,14 @@ def collect_report():
                 "owner": "HT-022：既存note担当", "url": record["url"],
                 "action": "担当が既に認識している差分。重複記事作成は禁止。",
             })
+    if home["link_advisory"]:
+        findings.append({
+            "id": "ht043-individual-item-link", "severity": "info",
+            "title": "公式HP：個別商品への直接リンク候補",
+            "details": home["link_advisory"],
+            "owner": "HT-043：既存Web担当", "url": HOME,
+            "action": "既存Web担当へ参考として共有。既存HPを無断で変更しない。"
+        })
     if home["status"] == "needs_review":
         findings.append({
             "id": "hp-store-links", "severity": "normal",
