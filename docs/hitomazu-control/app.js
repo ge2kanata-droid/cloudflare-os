@@ -121,7 +121,7 @@ async function loadSiteStatus(){
  report.checks.forEach(c=>{
  const row=el("div","check");const line=el("div","",clean(c.name,100)+" — "+(c.result==="reachable"?"応答あり":"要確認"));
  line.className=c.result==="reachable"?"status-good":"status-unknown";
- row.append(line,el("div","muted","HTTP "+(c.http_status??"取得不可")+" / "+clean(c.note,180)));host.append(row);
+ row.append(line,el("div","muted","HTTP "+(c.http_status??"取得不可")+" / "+clean(c.note,180))); if(c.sales_links){row.append(el("div","muted","トップページの直接リンク数：note "+(c.sales_links["note.com"]??"?")+" / SUZURI "+(c.sales_links["suzuri.jp"]??"?")));}if(Array.isArray(c.findings))c.findings.forEach(s=>row.append(el("div","status-unknown",clean(s,300))));host.append(row);
  });
  }catch{host.textContent="未取得：自動点検の設定または実行がまだ完了していません。";}
 }
