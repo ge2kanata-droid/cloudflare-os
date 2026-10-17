@@ -125,6 +125,57 @@ async function loadSiteStatus(){
  });
  }catch{host.textContent="未取得：自動点検の設定または実行がまだ完了していません。";}
 }
+
+async function loadFunnelStatus(){
+ const summary=$("funnelSummary"), findings=$("funnelFindings");
+ summary.textContent="監査結果を読み込み中…";findings.replaceChildren();
+ try{
+  const response=await fetch("./funnel-status.json",{cache:"no-store"});
+  if(!response.ok)throw Error("not found");
+  const report=await response.json();
+  if(report.schema!==1||!report.summary||!Array.isArray(report.findings)||!Array.isArray(report.note_checks))throw Error("bad format");
+  summary.replaceChildren();
+  const date=el("p","muted","最終監査："+clean(report.checked_at,45));
+  const counts=el("div","audit-counts");
+  counts.append(el("span","tag done","正常確認 "+(report.summary.verified_ok??"?")+"件"));
+  counts.append(el("span","tag review","要確認 "+(report.summary.needs_review??"?")+"件"));
+  counts.append(el("span","tag","判定不能 "+(report.summary.unknown??"?")+"件"));
+  summary.append(date,counts);
+  for(const c of report.note_checks.slice(0,8)){
+   const row=el("div","audit-row");
+   const status=c.status==="ok"?"正常確認":c.status==="needs_review"?"リンク要確認":"判定不能";
+   row.append(el("strong","",clean(c.name,100)+"： "+status),el("div","muted",clean(c.evidence,220)));
+   findings.append(row);
+  }
+  if(!report.findings.length){
+   findings.append(el("p","muted","今回の取得内容では新たな修正候補を検出していません。判定不能の場合は正常と断定できません。"));
+  }else{
+   const label=el("h3","","既存担当への改善候補");findings.append(label);
+   for(const finding of report.findings.slice(0,12)){
+    const row=el("div","audit-finding");
+    row.append(el("strong","",clean(finding.title,200)),el("p","muted",clean(finding.details,300)));
+    row.append(el("div","muted","担当："+clean(finding.owner,100)));
+    const actions=el("div","task-actions");
+    const copy=el("button","secondary","既存担当への依頼文をコピー");
+    copy.addEventListener("click",()=>copyPrompt({
+     title:clean(finding.title,120),owner:clean(finding.owner,80),
+     priority:finding.severity==="high"?"high":"normal",
+     status:"review",description:clean(finding.details,450)+"\n"+clean(finding.action,500),
+     url:safeUrl(finding.url),due:""
+    }));
+    actions.append(copy);
+    const link=safeUrl(finding.url);
+    if(link){const a=el("a","","公開ページ ↗");a.href=link;a.target="_blank";a.rel="noopener noreferrer";actions.append(a);}
+    row.append(actions);findings.append(row);
+   }
+  }
+  findings.append(el("p","muted","監査は定期実行されますが、指摘の修正・外部公開は既存担当の承認フローに従います。"));
+ }catch(e){
+  summary.textContent="監査結果は未取得です。次のGitHub Actions実行後に反映されます。";
+  findings.replaceChildren();
+ }
+}
+
 $("newBtn").addEventListener("click",()=>showDialog());
 $("cancelTask").addEventListener("click",()=>$("taskDialog").close());
 $("taskForm").addEventListener("submit",saveTask);
@@ -134,4 +185,5 @@ $("saveMetrics").addEventListener("click",saveMetrics);
 $("exportBtn").addEventListener("click",exportJson);
 $("importInput").addEventListener("change",importJson);
 $("refreshChecks").addEventListener("click",loadSiteStatus);
-render();loadSiteStatus();
+$("refreshFunnel").addEventListener("click",loadFunnelStatus);
+render();loadSiteStatus();loadFunnelStatus();
