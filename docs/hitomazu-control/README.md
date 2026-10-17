@@ -21,7 +21,7 @@
 3. Actions画面でworkflowが使えることを確認する。ForkはGitHub Actionsがデフォルト無効の場合がある。Hitomazu Free Site Audit and Dashboard を有効化して Run workflow するか、mainへのpushで自動実行させる。
 4. https://ge2kanata-droid.github.io/cloudflare-os/ を開く。URLはGitHub Pagesの発行後のみ有効です。GitHub Pages Settingsで提示されるURLを正とする。
 
-定期ジョブはUTC毎日01:23（日本時間10:23）に実行する設定です。ただしGitHub Actionsのスケジュールは遅延や自動無効化があり、常時稼働とは違います。
+定期ジョブは日本時間04:37・10:37・16:37・22:37の1日4回を予定しています。ただしGitHub Actionsのスケジュールは遅延や自動無効化があり、24時間常時稼働とは違います。検査結果は公開HTMLの観測であり、AIが修正を実行するものではありません。
 
 ## セキュリティと料金
 
