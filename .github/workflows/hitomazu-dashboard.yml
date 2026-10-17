@@ -5,7 +5,8 @@ name: Hitomazu Free Site Audit and Dashboard
 on:
   workflow_dispatch:
   schedule:
-    - cron: "23 1 * * *"
+    - # Four brief read-only checks daily; UTC hours translate to JST 10:37, 16:37, 22:37, 04:37.
+    - cron: "37 1,7,13,19 * * *"
   push:
     branches: [main]
     paths:
